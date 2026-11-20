@@ -1,0 +1,11 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+SQLAlchemy>=2.0
+alembic>=1.13
+psycopg2-binary>=2.9
+# pydantic >=2.10 breaks /docs (OpenAPI) on Python 3.9.0; drop this cap after upgrading Python
+pydantic>=2.6,<2.10
+pydantic-settings>=2.2
+email-validator>=2.1
+PyJWT>=2.8
+tzdata>=2024.1  # timezone database for zoneinfo on Windows
