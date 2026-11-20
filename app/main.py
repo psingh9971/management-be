@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, Request
+from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
@@ -17,8 +17,16 @@ from app.endpoints import (
 )
 from app.repositories.errors import DomainError
 
+API_PREFIX = "/api"
+
 # Schema is managed by Alembic: run `alembic upgrade head` before starting the app.
-app = FastAPI(title=settings.APP_NAME)
+app = FastAPI(
+    title=settings.APP_NAME,
+    docs_url=f"{API_PREFIX}/docs",
+    redoc_url=f"{API_PREFIX}/redoc",
+    openapi_url=f"{API_PREFIX}/openapi.json",
+    swagger_ui_oauth2_redirect_url=f"{API_PREFIX}/docs/oauth2-redirect",
+)
 
 
 @app.exception_handler(DomainError)
@@ -28,21 +36,27 @@ def handle_domain_error(_: Request, exc: DomainError):
 
 authenticated = [Depends(get_current_user)]
 
+# Every route lives under /api, e.g. /api/auth/login
+api = APIRouter(prefix=API_PREFIX)
+
 # Public
-app.include_router(auth.router)
+api.include_router(auth.router)
 # Authenticated via X-Webhook-Secret (devices can't log in with a user account)
-app.include_router(webhooks.router)
+api.include_router(webhooks.router)
 # JWT-protected (some routes additionally require the admin role)
-app.include_router(employees.router, dependencies=authenticated)
-app.include_router(attendance.router, dependencies=authenticated)
-app.include_router(leaves.router, dependencies=authenticated)
-app.include_router(leave_types.router, dependencies=authenticated)
-app.include_router(holidays.router, dependencies=authenticated)
-app.include_router(week_offs.router, dependencies=authenticated)
-app.include_router(payroll.router, dependencies=authenticated)  # admin / finance only
-app.include_router(users.router)  # super admin only (enforced in the router)
+api.include_router(employees.router, dependencies=authenticated)
+api.include_router(attendance.router, dependencies=authenticated)
+api.include_router(leaves.router, dependencies=authenticated)
+api.include_router(leave_types.router, dependencies=authenticated)
+api.include_router(holidays.router, dependencies=authenticated)
+api.include_router(week_offs.router, dependencies=authenticated)
+api.include_router(payroll.router, dependencies=authenticated)  # admin / finance only
+api.include_router(users.router)  # super admin only (enforced in the router)
 
 
-@app.get("/health", tags=["health"])
+@api.get("/health", tags=["health"])
 def health():
     return {"status": "ok"}
+
+
+app.include_router(api)
