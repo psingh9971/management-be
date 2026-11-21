@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # Business timezone: punches are grouped into days and times are returned in this zone
     APP_TIMEZONE: str = "Asia/Kolkata"
 
+    # Printed on offer letters
+    COMPANY_NAME: str = "Company"
+    COMPANY_ADDRESS: Optional[str] = None
+
     @property
     def tz(self) -> ZoneInfo:
         return ZoneInfo(self.APP_TIMEZONE)

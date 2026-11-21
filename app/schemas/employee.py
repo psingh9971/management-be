@@ -127,6 +127,38 @@ class EmployeeCreate(EmployeeBase):
     pan_card: Optional[PanCardCreate] = None
 
 
+class EmployeeUpdate(BaseModel):
+    """Partial update - only the fields sent are changed.
+
+    For bank_detail / aadhaar_card / pan_card: send an object to create or replace the record,
+    send null to remove it, or omit the key to leave it untouched.
+    """
+    employee_code: Optional[str] = Field(None, max_length=50)
+    first_name: Optional[str] = Field(None, max_length=100)
+    last_name: Optional[str] = Field(None, max_length=100)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=20)
+    date_of_birth: Optional[date] = None
+    gender: Optional[Gender] = None
+    date_of_joining: Optional[date] = None
+    designation: Optional[str] = Field(None, max_length=100)
+    department: Optional[str] = Field(None, max_length=100)
+    address: Optional[str] = None
+    is_active: Optional[bool] = None
+    salary: Optional[Decimal] = Field(None, gt=0, max_digits=12, decimal_places=2, description="Monthly gross salary (INR)")
+    bank_detail: Optional[BankDetailCreate] = None
+    aadhaar_card: Optional[AadhaarCardCreate] = None
+    pan_card: Optional[PanCardCreate] = None
+
+    @field_validator("employee_code", "first_name", "is_active", "salary")
+    @classmethod
+    def not_null(cls, v):
+        # These columns are required; they may be omitted but not explicitly cleared
+        if v is None:
+            raise ValueError("cannot be null")
+        return v
+
+
 class EmployeeListItem(EmployeeBase):
     """Lightweight row for list views - no KYC/bank data."""
     model_config = ConfigDict(from_attributes=True)

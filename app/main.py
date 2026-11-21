@@ -10,6 +10,7 @@ from app.endpoints import (
     holidays,
     leave_types,
     leaves,
+    offer_letters,
     payroll,
     users,
     week_offs,
@@ -51,6 +52,7 @@ api.include_router(leave_types.router, dependencies=authenticated)
 api.include_router(holidays.router, dependencies=authenticated)
 api.include_router(week_offs.router, dependencies=authenticated)
 api.include_router(payroll.router, dependencies=authenticated)  # admin / finance only
+api.include_router(offer_letters.router, dependencies=authenticated)  # admin / finance only
 api.include_router(users.router)  # super admin only (enforced in the router)
 
 

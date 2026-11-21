@@ -1,10 +1,10 @@
 import enum
 import uuid
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from sqlalchemy import Boolean, Date, Enum, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -34,6 +34,9 @@ class Employee(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     department: Mapped[Optional[str]] = mapped_column(String(100))
     address: Mapped[Optional[str]] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    # Set by the soft-delete API. Soft-deleted employees are hidden from every API but the row
+    # (and its attendance / leave / payroll history) is kept. NULL = not deleted.
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), index=True)
     # Monthly gross salary in INR. Nullable only for rows created before this column existed;
     # the create API requires it. Exposed only via GET /employees/{id}/salary.
     salary: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))

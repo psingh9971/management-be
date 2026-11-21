@@ -2,6 +2,7 @@ from app.models.attendance import AttendancePunch, AttendanceRecord, AttendanceS
 from app.models.calendar import Holiday, WeekOffPolicy, WeekOffRule
 from app.models.employee import AadhaarCard, BankDetail, Employee, Gender, PanCard
 from app.models.leave import LeaveBalance, LeaveRequest, LeaveStatus, LeaveType
+from app.models.offer_letter import OfferLetter, OfferLetterStatus
 from app.models.payroll import (
     CalculationType,
     ComponentType,
@@ -31,6 +32,8 @@ __all__ = [
     "LeaveRequest",
     "LeaveStatus",
     "LeaveType",
+    "OfferLetter",
+    "OfferLetterStatus",
     "PanCard",
     "ProrationBasis",
     "PunchType",
