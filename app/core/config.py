@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from zoneinfo import ZoneInfo
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -30,6 +30,13 @@ class Settings(BaseSettings):
     # Printed on offer letters
     COMPANY_NAME: str = "Company"
     COMPANY_ADDRESS: Optional[str] = None
+
+    # Comma-separated list of frontend origins allowed to call the API (CORS)
+    CORS_ORIGINS: str = "http://localhost:5173"
+
+    @property
+    def cors_origins(self) -> List[str]:
+        return [o.strip().rstrip("/") for o in self.CORS_ORIGINS.split(",") if o.strip()]
 
     @property
     def tz(self) -> ZoneInfo:
