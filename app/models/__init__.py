@@ -14,6 +14,7 @@ from app.models.payroll import (
     SalaryStructure,
     SalaryStructureComponent,
 )
+from app.models.tenant import Tenant
 from app.models.user import User, UserRole
 
 __all__ = [
@@ -42,6 +43,7 @@ __all__ = [
     "SalarySlipStatus",
     "SalaryStructure",
     "SalaryStructureComponent",
+    "Tenant",
     "User",
     "UserRole",
     "WeekOffPolicy",

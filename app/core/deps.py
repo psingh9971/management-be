@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
 from app.db.session import get_db
+from app.db.tenancy import set_tenant
 from app.models.user import User, UserRole
 
 # Gives Swagger UI an "Authorize" button where the token can be pasted
@@ -33,8 +34,11 @@ def get_current_user(
         raise _unauthorized
     # Load from DB on every request so deactivation / role changes take effect immediately
     user = db.get(User, user_id)
-    if user is None or not user.is_active:
+    if user is None or not user.is_active or not user.tenant.is_active:
         raise _unauthorized
+    # Every query made with this request's session is now limited to the user's tenant.
+    # FastAPI caches get_db per request, so endpoints receive this same session.
+    set_tenant(db, user.tenant_id)
     return user
 
 

@@ -6,27 +6,28 @@ from sqlalchemy import Boolean, Date, ForeignKey, Index, SmallInteger, String, T
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.db.base import Base, TenantMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
-class WeekOffPolicy(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class WeekOffPolicy(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     """A named set of week-off rules, e.g. 'Sundays + 2nd/4th Saturdays'.
 
-    Employees without an explicit policy fall back to the default policy.
+    Employees without an explicit policy fall back to their tenant's default policy.
     """
 
     __tablename__ = "week_off_policies"
     __table_args__ = (
-        # At most one default policy
+        UniqueConstraint("tenant_id", "name", name="uq_week_off_policies_tenant_name"),
+        # At most one default policy per tenant
         Index(
             "uq_week_off_policies_single_default",
-            "is_default",
+            "tenant_id",
             unique=True,
             postgresql_where=text("is_default"),
         ),
     )
 
-    name: Mapped[str] = mapped_column(String(100), unique=True)
+    name: Mapped[str] = mapped_column(String(100))
     description: Mapped[Optional[str]] = mapped_column(Text)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
@@ -55,11 +56,12 @@ class WeekOffRule(UUIDPrimaryKeyMixin, Base):
     policy: Mapped[WeekOffPolicy] = relationship(back_populates="rules")
 
 
-class Holiday(UUIDPrimaryKeyMixin, TimestampMixin, Base):
-    """Company-wide holiday; applies to all employees."""
+class Holiday(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
+    """Company-wide holiday; applies to all of the tenant's employees."""
 
     __tablename__ = "holidays"
+    __table_args__ = (UniqueConstraint("tenant_id", "date", name="uq_holidays_tenant_date"),)
 
-    date: Mapped[dt.date] = mapped_column(Date, unique=True, index=True)
+    date: Mapped[dt.date] = mapped_column(Date, index=True)
     name: Mapped[str] = mapped_column(String(150))
     description: Mapped[Optional[str]] = mapped_column(Text)

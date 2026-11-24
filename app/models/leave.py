@@ -19,7 +19,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.db.base import Base, TenantMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class LeaveStatus(str, enum.Enum):
@@ -29,13 +29,17 @@ class LeaveStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
-class LeaveType(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class LeaveType(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     """Configurable leave category, e.g. Casual Leave (CL), Sick Leave (SL), Loss of Pay (LOP)."""
 
     __tablename__ = "leave_types"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name", name="uq_leave_types_tenant_name"),
+        UniqueConstraint("tenant_id", "code", name="uq_leave_types_tenant_code"),
+    )
 
-    name: Mapped[str] = mapped_column(String(100), unique=True)
-    code: Mapped[str] = mapped_column(String(20), unique=True)
+    name: Mapped[str] = mapped_column(String(100))
+    code: Mapped[str] = mapped_column(String(20))
     description: Mapped[Optional[str]] = mapped_column(Text)
     # Days granted per calendar year unless overridden per employee in leave_balances
     annual_quota: Mapped[Decimal] = mapped_column(Numeric(5, 1), default=0, server_default="0")
@@ -44,7 +48,7 @@ class LeaveType(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
 
 
-class LeaveBalance(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class LeaveBalance(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     """Per-employee override of a leave type's annual quota for a given year."""
 
     __tablename__ = "leave_balances"
@@ -62,7 +66,7 @@ class LeaveBalance(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     leave_type: Mapped[LeaveType] = relationship(lazy="joined")
 
 
-class LeaveRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class LeaveRequest(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     __tablename__ = "leave_requests"
     __table_args__ = (
         CheckConstraint("end_date >= start_date", name="ck_leave_request_dates"),

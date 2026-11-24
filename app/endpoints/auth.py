@@ -14,7 +14,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    user = user_repository.authenticate(db, payload.username, payload.password)
+    user = user_repository.authenticate(db, payload.tenant_id, payload.username, payload.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -27,6 +27,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
             "username": user.username,
             "role": user.role.value,
             "is_super_admin": user.is_super_admin,
+            "tenant_id": str(user.tenant_id),
         },
     )
     return TokenResponse(access_token=token, expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)

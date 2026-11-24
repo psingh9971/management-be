@@ -75,6 +75,7 @@ def update_leave_type(db: Session, leave_type_id: UUID, data: LeaveTypeUpdate) -
 def set_allocation(db: Session, employee: Employee, data: LeaveAllocationIn) -> None:
     get_leave_type(db, data.leave_type_id)
     stmt = insert(LeaveBalance).values(
+        tenant_id=employee.tenant_id,  # Core insert: not stamped automatically
         employee_id=employee.id, leave_type_id=data.leave_type_id, year=data.year, allocated=data.allocated
     )
     stmt = stmt.on_conflict_do_update(

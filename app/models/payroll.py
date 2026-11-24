@@ -19,7 +19,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.db.base import Base, TenantMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 def _enum(cls, name: str) -> Enum:
@@ -51,13 +51,14 @@ class SalarySlipStatus(str, enum.Enum):
     PAID = "paid"
 
 
-class SalaryStructure(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class SalaryStructure(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     """A reusable salary template, e.g. 'Standard Staff': Basic 50% of gross, HRA 40% of Basic,
     Special Allowance = balance, PF 12% of Basic, Professional Tax 200 fixed."""
 
     __tablename__ = "salary_structures"
+    __table_args__ = (UniqueConstraint("tenant_id", "name", name="uq_salary_structures_tenant_name"),)
 
-    name: Mapped[str] = mapped_column(String(100), unique=True)
+    name: Mapped[str] = mapped_column(String(100))
     description: Mapped[Optional[str]] = mapped_column(Text)
     proration_basis: Mapped[ProrationBasis] = mapped_column(
         _enum(ProrationBasis, "proration_basis"),
@@ -99,7 +100,7 @@ class SalaryStructureComponent(UUIDPrimaryKeyMixin, Base):
     structure: Mapped[SalaryStructure] = relationship(back_populates="components")
 
 
-class EmployeeSalaryAssignment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class EmployeeSalaryAssignment(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     """Links an employee to a salary structure with a monthly gross, for a date range.
     effective_to NULL = still in effect. Assigning a new structure closes the previous one."""
 
@@ -123,7 +124,7 @@ class EmployeeSalaryAssignment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     structure: Mapped[SalaryStructure] = relationship(lazy="joined")
 
 
-class SalarySlip(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class SalarySlip(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     """One employee's pay for one month. Attendance counts and component amounts are
     snapshotted, so later edits to the structure or attendance don't change it."""
 

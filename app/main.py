@@ -13,6 +13,7 @@ from app.endpoints import (
     leaves,
     offer_letters,
     payroll,
+    tenants,
     users,
     week_offs,
     webhooks,
@@ -51,6 +52,7 @@ api = APIRouter(prefix=API_PREFIX)
 
 # Public
 api.include_router(auth.router)
+api.include_router(tenants.router)
 # Authenticated via X-Webhook-Secret (devices can't log in with a user account)
 api.include_router(webhooks.router)
 # JWT-protected (some routes additionally require the admin role)

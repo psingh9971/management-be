@@ -8,7 +8,7 @@ from sqlalchemy import CheckConstraint, Date, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.db.base import Base, TenantMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class PunchType(str, enum.Enum):
@@ -16,7 +16,7 @@ class PunchType(str, enum.Enum):
     OUT = "out"
 
 
-class AttendancePunch(UUIDPrimaryKeyMixin, Base):
+class AttendancePunch(UUIDPrimaryKeyMixin, TenantMixin, Base):
     __tablename__ = "attendance_punches"
     # Devices often retry webhooks; this keeps the same punch from being stored twice.
     __table_args__ = (
@@ -48,7 +48,7 @@ class AttendanceStatus(str, enum.Enum):
     LEAVE = "leave"
 
 
-class AttendanceRecord(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class AttendanceRecord(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     """The attendance status of one employee for one day (raw device punches live in
     attendance_punches). Currently filled by manual marking."""
 

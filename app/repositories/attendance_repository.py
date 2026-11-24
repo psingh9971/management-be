@@ -59,6 +59,7 @@ def record_punch(
     stmt = (
         insert(AttendancePunch)
         .values(
+            tenant_id=employee.tenant_id,  # Core insert: not stamped automatically
             employee_id=employee.id,
             punch_time=punch_time,
             punch_type=punch_type,

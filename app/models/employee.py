@@ -4,10 +4,10 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.db.base import Base, TenantMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class Gender(str, enum.Enum):
@@ -16,14 +16,18 @@ class Gender(str, enum.Enum):
     OTHER = "other"
 
 
-class Employee(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class Employee(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     __tablename__ = "employees"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "employee_code", name="uq_employees_tenant_code"),
+        UniqueConstraint("tenant_id", "email", name="uq_employees_tenant_email"),
+    )
 
-    # Code used by attendance devices to identify the employee
-    employee_code: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    # Code used by attendance devices to identify the employee (unique within the tenant)
+    employee_code: Mapped[str] = mapped_column(String(50), index=True)
     first_name: Mapped[str] = mapped_column(String(100))
     last_name: Mapped[Optional[str]] = mapped_column(String(100))
-    email: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255))
     phone: Mapped[Optional[str]] = mapped_column(String(20))
     date_of_birth: Mapped[Optional[date]] = mapped_column(Date)
     gender: Mapped[Optional[Gender]] = mapped_column(
@@ -60,7 +64,7 @@ class Employee(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     week_off_policy: Mapped[Optional["WeekOffPolicy"]] = relationship()  # noqa: F821
 
 
-class BankDetail(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class BankDetail(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     __tablename__ = "employee_bank_details"
 
     employee_id: Mapped[uuid.UUID] = mapped_column(
@@ -75,13 +79,14 @@ class BankDetail(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     employee: Mapped[Employee] = relationship(back_populates="bank_detail")
 
 
-class AadhaarCard(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class AadhaarCard(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     __tablename__ = "employee_aadhaar_cards"
+    __table_args__ = (UniqueConstraint("tenant_id", "aadhaar_number", name="uq_aadhaar_cards_tenant_number"),)
 
     employee_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("employees.id", ondelete="CASCADE"), unique=True
     )
-    aadhaar_number: Mapped[str] = mapped_column(String(12), unique=True)
+    aadhaar_number: Mapped[str] = mapped_column(String(12))
     name_on_card: Mapped[str] = mapped_column(String(150))
     date_of_birth: Mapped[Optional[date]] = mapped_column(Date)
     address: Mapped[Optional[str]] = mapped_column(Text)
@@ -89,13 +94,14 @@ class AadhaarCard(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     employee: Mapped[Employee] = relationship(back_populates="aadhaar_card")
 
 
-class PanCard(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class PanCard(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     __tablename__ = "employee_pan_cards"
+    __table_args__ = (UniqueConstraint("tenant_id", "pan_number", name="uq_pan_cards_tenant_number"),)
 
     employee_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("employees.id", ondelete="CASCADE"), unique=True
     )
-    pan_number: Mapped[str] = mapped_column(String(10), unique=True)
+    pan_number: Mapped[str] = mapped_column(String(10))
     name_on_card: Mapped[str] = mapped_column(String(150))
     date_of_birth: Mapped[Optional[date]] = mapped_column(Date)
 

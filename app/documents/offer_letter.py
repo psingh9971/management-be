@@ -3,7 +3,6 @@ from decimal import Decimal
 from html import escape
 from typing import List, Optional
 
-from app.core.config import settings
 from app.models.offer_letter import OfferLetter, OfferLetterStatus
 from app.models.payroll import ComponentType
 from app.repositories.offer_letter_repository import components_of
@@ -82,6 +81,7 @@ def render_offer_letter(letter: OfferLetter) -> str:
         if deductions else ""
     )
 
+    company = letter.tenant.name
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -113,15 +113,15 @@ def render_offer_letter(letter: OfferLetter) -> str:
 </head>
 <body>
 <header>
-  <h1>{_e(settings.COMPANY_NAME)}</h1>
-  {f"<p>{_e(settings.COMPANY_ADDRESS)}</p>" if settings.COMPANY_ADDRESS else ""}
+  <h1>{_e(company)}</h1>
+  {f"<p>{_e(letter.tenant.address)}</p>" if letter.tenant.address else ""}
 </header>
 {withdrawn}
 <div class="meta"><span>Ref: {_e(letter.letter_number)}</span><span>Date: {_date(letter.offer_date)}</span></div>
 <h2>{title}</h2>
 <p>Dear {_e(letter.candidate_name)},</p>
 <p>We are pleased to offer you the position of <strong>{_e(letter.designation)}</strong>{department}{location}
-with {_e(settings.COMPANY_NAME)}. {joining}</p>
+with {_e(company)}. {joining}</p>
 <p>Your annual gross compensation will be <strong>{_inr(letter.annual_gross)}</strong>
 ({_inr(letter.monthly_gross)} per month), structured as follows:</p>
 <table>
@@ -143,7 +143,7 @@ Statutory deductions are subject to applicable law.</p>
 {terms}
 <p>We look forward to having you on our team.</p>
 <div class="sign">
-  <div>For {_e(settings.COMPANY_NAME)}<br><br><br>Authorised Signatory</div>
+  <div>For {_e(company)}<br><br><br>Authorised Signatory</div>
   <div>Accepted by<br><br><br>{_e(letter.candidate_name)}</div>
 </div>
 </body>

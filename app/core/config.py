@@ -27,10 +27,6 @@ class Settings(BaseSettings):
     # Business timezone: punches are grouped into days and times are returned in this zone
     APP_TIMEZONE: str = "Asia/Kolkata"
 
-    # Printed on offer letters
-    COMPANY_NAME: str = "Company"
-    COMPANY_ADDRESS: Optional[str] = None
-
     # Comma-separated list of frontend origins allowed to call the API (CORS)
     CORS_ORIGINS: str = "http://localhost:5173"
 

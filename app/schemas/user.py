@@ -8,6 +8,7 @@ from app.models.user import UserRole
 
 
 class LoginRequest(BaseModel):
+    tenant_id: UUID  # from GET /api/tenants/current
     username: str
     password: str
 
@@ -45,6 +46,7 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    tenant_id: UUID
     username: str
     email: Optional[str]
     full_name: Optional[str]

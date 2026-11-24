@@ -4,11 +4,11 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, Numeric, String, Text, text
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, Numeric, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.db.base import Base, TenantMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class OfferLetterStatus(str, enum.Enum):
@@ -17,12 +17,13 @@ class OfferLetterStatus(str, enum.Enum):
     WITHDRAWN = "withdrawn"
 
 
-class OfferLetter(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class OfferLetter(UUIDPrimaryKeyMixin, TenantMixin, TimestampMixin, Base):
     """Offer to a candidate (an employee record that hasn't joined yet). The salary breakdown is
     a snapshot of the employee's assigned salary structure at the time the letter was issued/updated."""
 
     __tablename__ = "offer_letters"
     __table_args__ = (
+        UniqueConstraint("tenant_id", "letter_number", name="uq_offer_letters_tenant_number"),
         # At most one live (non-withdrawn) offer per candidate
         Index(
             "uq_offer_letters_single_active",
@@ -32,7 +33,7 @@ class OfferLetter(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ),
     )
 
-    letter_number: Mapped[str] = mapped_column(String(30), unique=True)  # e.g. OL-2026-0001
+    letter_number: Mapped[str] = mapped_column(String(30))  # e.g. OL-2026-0001, unique per tenant
     employee_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("employees.id", ondelete="CASCADE"), index=True
     )
@@ -76,3 +77,5 @@ class OfferLetter(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     withdrawal_reason: Mapped[Optional[str]] = mapped_column(Text)
 
     employee: Mapped["Employee"] = relationship(lazy="joined")  # noqa: F821
+    # Letterhead (company name / address)
+    tenant: Mapped["Tenant"] = relationship(lazy="joined")  # noqa: F821

@@ -2,10 +2,13 @@ import hmac
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.session import get_db
+from app.db.tenancy import set_tenant
+from app.models.tenant import Tenant
 from app.repositories import attendance_repository, employee_repository
 from app.schemas.attendance import PunchWebhookIn, PunchWebhookResult
 
@@ -19,11 +22,21 @@ def verify_webhook_secret(x_webhook_secret: Optional[str] = Header(None)) -> Non
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook secret")
 
 
+def device_tenant(x_tenant: str = Header(..., description="Slug of the tenant the device belongs to"),
+                  db: Session = Depends(get_db)) -> Tenant:
+    """Devices don't log in, so they name their tenant in the X-Tenant header."""
+    tenant = db.scalars(select(Tenant).where(Tenant.slug == x_tenant.strip().lower())).first()
+    if tenant is None or not tenant.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unknown tenant")
+    set_tenant(db, tenant.id)
+    return tenant
+
+
 @router.post(
     "/attendance/punch",
     response_model=PunchWebhookResult,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(verify_webhook_secret)],
+    dependencies=[Depends(verify_webhook_secret), Depends(device_tenant)],
 )
 def incoming_punch(payload: PunchWebhookIn, response: Response, db: Session = Depends(get_db)):
     employee = employee_repository.get_employee_by_code(db, payload.employee_code)
